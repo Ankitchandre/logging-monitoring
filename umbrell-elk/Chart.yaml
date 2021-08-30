@@ -3,14 +3,14 @@ name: elk
 version: 0.1
 dependencies:
 - name: elasticsearch
-  version: 7.8.1
+  version: 7.12.1
   repository: https://helm.elastic.co
 - name: logstash
-  version: 7.8.1
+  version: 7.12.1
   repository: https://helm.elastic.co
 - name: kibana
-  version: 7.8.1
+  version: 7.12.1
   repository: https://helm.elastic.co
 - name: filebeat
-  version: 7.8.1
+  version: 7.12.1
   repository: https://helm.elastic.co
