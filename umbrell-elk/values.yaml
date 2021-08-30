@@ -1,0 +1,65 @@
+elasticsearch:
+  ingress:
+    enabled: false
+  antiAffinity: "soft"
+
+  replicas: 1
+  minimumMasterNodes: 1
+  clusterHealthCheckParams: 'wait_for_status=yellow&timeout=1s'
+  # Shrink default JVM heap.
+  esJavaOpts: "-Xmx128m -Xms128m"
+
+  # Allocate smaller chunks of memory per pod.
+  resources:
+    requests:
+      cpu: "300m"
+      memory: "1Gi"
+    limits:
+      cpu: "300m"
+      memory: "1Gi"
+
+  # Request smaller persistent volumes.
+  volumeClaimTemplate:
+    accessModes: [ "ReadWriteOnce" ]
+    storageClassName: "hostpath"
+    resources:
+      requests:
+        storage: 100M
+
+logstash:
+  persistence:
+    enabled: true
+
+  logstashConfig:
+    logstash.yml: |
+      http.host: 0.0.0.0
+      xpack.monitoring.enabled: false
+  logstashPipeline:
+    uptime.conf: |
+      input { exec { command => "uptime" interval => 30 } }
+      output { elasticsearch { hosts => ["http://elasticsearch-master.logging.svc.cluster.local:9200"] index => "logstash" } }
+
+kibana:
+  elasticsearchHosts: http://elasticsearch-master.logging.svc.cluster.local:9200
+
+filebeat:
+  deployment:
+    enabled: false
+
+  daemonset:
+    enabled: true
+
+  filebeatConfig:
+    filebeat.yml: |
+      filebeat.inputs:
+      - type: container
+        paths:
+          - /var/log/containers/*.log
+        processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+      output.logstash:
+        hosts: ["logstash-logstash.logging.svc.cluster.local:5044"]
